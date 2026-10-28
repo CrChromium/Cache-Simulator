@@ -25,57 +25,143 @@ uint64_t Hit = 0;
 uint64_t Miss = 0;
 uint64_t reads = 0;
 uint64_t writes = 0;
+uint64_t num_access = 0;
 
-void Update_lru(long long int add);
-void Update_fifo(long long int add);
+void Update_lru(unsigned int set, unsigned int way, CacheBlock* cache);
+void Update_fifo(unsigned int set, unsigned int way, CacheBlock* cache);
+unsigned int eject(unsigned int set, CacheBlock* cache);
 
 void Simulate_access(char op, uint64_t add, CacheBlock *cache) {
 
+    printf("Simulated\n");
     uint64_t block = add / BLOCK_SIZE;
-    uint64_t set = block % num_sets;
+    unsigned int set = block % num_sets;
     uint64_t tag = block / num_sets;
 
     printf("Address = 0x%" PRIx64 "\n", add);
-    printf("Set = %" PRIu64 "\n", set);
+    printf("Set = %u\n", set);
     printf("Tag = %" PRIu64 "\n", tag);
 
-    size_t base = (size_t)(set * assoc);
+    unsigned int base = set * assoc;
 
-    for(size_t way = 0; way < assoc; way++) {
+    for(unsigned int way = 0; way < assoc; way++) {
         
         CacheBlock *line = &cache[base + way];
 
         if (line->valid && line->tag == tag) {
             Hit++;
 
-            printf("Hit here: 0x%" PRIx64 "\n", add);
+            printf("hit\n");
 
+            if (replacement == 0){
+                Update_lru(set, way, cache);
+            }
+
+            if (op == 'W'){
+                
+                if (wb == 0)
+                    writes++;
+                else
+                    line->dirty = true;
+            }
             return;
         }
     }
 
     Miss++;
-    printf("Miss here: 0x%" PRIx64 "\n", add);
 
-    for(size_t way = 0; way < assoc; way++){
+    printf("Miss\n");
+    reads++;
+
+    for(unsigned int way = 0; way < assoc; way++){
 
         CacheBlock *line = &cache[base + way];
 
         if (!line->valid) {
             line->tag = tag;
             line->valid = true;
+            line->dirty = false;
 
+            if (op == 'W') {
+
+                if (wb == 0) {
+                    writes++;
+                }
+                else {
+                    line->dirty = true;
+                }
         }
+
+            if (replacement == 0){
+                Update_lru(set, way, cache);
+            } else {
+                Update_fifo(set, way, cache);
+            }
+
+            return;
+        }
+    }
+
+    unsigned int ejected = eject(set, cache);
+
+    CacheBlock* line = &cache[base+ejected];
+
+    if (wb == 1 && line->dirty)
+        writes++;
+
+    line->tag = tag;
+    line->valid = true;
+    line->dirty = false;
+
+    if (op == 'W') {
+
+        if (wb == 0) {
+            writes++;
+        }
+        else {
+            line->dirty = true;
+        }
+}
+
+    if (replacement ==0){
+        Update_lru(set, ejected, cache);
+    } else {
+        Update_fifo(set, ejected, cache);
     }
 }
 
-void Update_lru(long long int add) {
+void Update_lru(unsigned int set, unsigned int way, CacheBlock* cache) {
 
+    num_access++;
 
+    cache[set * assoc + way].last_used = num_access;
 }
 
-void Update_fifo(long long int add) {
+void Update_fifo(unsigned int set, unsigned int way, CacheBlock* cache) {
 
+    num_access++;
+
+    cache[set * assoc + way].last_used = num_access;
+}
+
+unsigned int eject(unsigned int set, CacheBlock* cache) {
+
+    unsigned int ejected = 0;
+
+    uint64_t oldest = cache[set * assoc].last_used;
+
+    for (unsigned int way = 1; way < assoc; way++) {
+
+        CacheBlock *line = &cache[set * assoc + way];
+
+        if (line->last_used < oldest) {
+
+            oldest = line->last_used;
+            ejected = way;
+        }
+    }
+
+    return ejected;
 }
 
 int main(int argc, char *argv[]) {
@@ -127,6 +213,9 @@ int main(int argc, char *argv[]) {
 
     printf("Hits: %" PRIu64 "\n", Hit);
     printf("Misses: %" PRIu64 "\n", Miss);
+    printf("Miss Ratio: %f\n", (double)Miss / (Hit + Miss));
+    printf("Reads: %" PRIu64 "\n", reads);
+    printf("Writes: %" PRIu64 "\n", writes);
 
     return 0;
 }
