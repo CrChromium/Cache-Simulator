@@ -5,14 +5,12 @@
 #include <inttypes.h>
 
 
-#define NUM_SETS
-#define ASSOC
 #define BLOCK_SIZE 64
 
 
-long long int tag_array[NUM_SETS][ASSOC];
+/*long long int tag_array[NUM_SETS][ASSOC];
 long long int lru_position[NUM_SETS][ASSOC];
-bool dirty[NUM_SETS][ASSOC];
+bool dirty[NUM_SETS][ASSOC];*/
 
 int Hit = 0;
 int Miss = 0;
@@ -20,7 +18,7 @@ int Miss = 0;
 void Update_lru(long long int add);
 void Update_fifo(long long int add);
 
-void Simulate_access(char op, long long int add) {
+/*void Simulate_access(char op, long long int add) {
     int set = (add / BLOCK_SIZE) % NUM_SETS;
     long long int tag = add / BLOCK_SIZE;
 
@@ -28,7 +26,7 @@ void Simulate_access(char op, long long int add) {
         if(tag == tag_array[set][i]){
             Hit++;
 
-            if(/*lru policy*/){
+            if(lru policy){
                 Update_lru(add);
             } else {
                 Update_fifo(add);
@@ -37,7 +35,7 @@ void Simulate_access(char op, long long int add) {
             Miss++;
         }
     }
-}
+}*/
 
 void Update_lru(long long int add) {
 
@@ -67,23 +65,37 @@ int main(int argc, char *argv[]) {
     unsigned long long num_sets = cache_size / (BLOCK_SIZE * assoc);
     
     char op;
-    long long int add;
+    uint64_t add;
     FILE *file = fopen(trace_file, "r");
+
+    printf("Cache size = %llu\n", cache_size);
+    printf("Associativity = %llu\n", assoc);
+    printf("Replacement policy = %s\n", replacement == 0 ? "LRU" : "FIFO");
+    printf("Write Policy = %s\n", wb == 0 ? "Write-through" : "Write-back");
+    printf("Number of sets = %llu\n", num_sets);
+
+
+
+
 
     if (!file){
         printf("Error: Could not open the trace file.\n");
         return 1;
     }
 
-    while(!feof(file)) {
-        fscanf(file, " %c %llx", &op, &add);
+    while(fscanf(file, " %c %" SCNx64, &op, &add) == 2) {
+        
 
         uint64_t block = add / BLOCK_SIZE;
         uint64_t set = block % num_sets;
         uint64_t tag = block / num_sets;
 
+        printf("Address = %" PRIx64 "\n", add);
+        printf("Set = %" PRIu64 "\n", set);
+        printf("Tag = %" PRIu64 "\n", tag);
 
-        Simulate_access(op, add);
+
+        //Simulate_access(op, add);
     }
 
     fclose(file);
