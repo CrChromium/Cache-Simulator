@@ -33,14 +33,14 @@ unsigned int eject(unsigned int set, CacheBlock* cache);
 
 void Simulate_access(char op, uint64_t add, CacheBlock *cache) {
 
-    printf("Simulated\n");
+    //printf("Simulated\n");
     uint64_t block = add / BLOCK_SIZE;
     unsigned int set = block % num_sets;
     uint64_t tag = block / num_sets;
 
-    printf("Address = 0x%" PRIx64 "\n", add);
+    /*printf("Address = 0x%" PRIx64 "\n", add);
     printf("Set = %u\n", set);
-    printf("Tag = %" PRIu64 "\n", tag);
+    printf("Tag = %" PRIu64 "\n", tag);*/
 
     unsigned int base = set * assoc;
 
@@ -51,7 +51,7 @@ void Simulate_access(char op, uint64_t add, CacheBlock *cache) {
         if (line->valid && line->tag == tag) {
             Hit++;
 
-            printf("hit\n");
+            //printf("hit\n");
 
             if (replacement == 0){
                 Update_lru(set, way, cache);
@@ -70,7 +70,7 @@ void Simulate_access(char op, uint64_t add, CacheBlock *cache) {
 
     Miss++;
 
-    printf("Miss\n");
+    //printf("Miss\n");
     reads++;
 
     for(unsigned int way = 0; way < assoc; way++){
@@ -193,11 +193,11 @@ int main(int argc, char *argv[]) {
 
 
 
-    printf("Cache size = %u\n", cache_size);
+    /*printf("Cache size = %u\n", cache_size);
     printf("Associativity = %u\n", assoc);
     printf("Replacement policy = %s\n", replacement == 0 ? "LRU" : "FIFO");
     printf("Write Policy = %s\n", wb == 0 ? "Write-through" : "Write-back");
-    printf("Number of sets = %u\n", num_sets);
+    printf("Number of sets = %u\n", num_sets);*/
 
     if (!file){
         printf("Error: Could not open the trace file.\n");
@@ -211,8 +211,8 @@ int main(int argc, char *argv[]) {
 
     fclose(file);
 
-    printf("Hits: %" PRIu64 "\n", Hit);
-    printf("Misses: %" PRIu64 "\n", Miss);
+    /*printf("Hits: %" PRIu64 "\n", Hit);
+    printf("Misses: %" PRIu64 "\n", Miss);*/
     printf("Miss Ratio: %f\n", (double)Miss / (Hit + Miss));
     printf("Reads: %" PRIu64 "\n", reads);
     printf("Writes: %" PRIu64 "\n", writes);
