@@ -148,7 +148,7 @@ void Update_fifo(unsigned int set, unsigned int way, CacheBlock* cache) {
     cache[set * assoc + way].last_used = num_access;
 }
 
-//This function ejects the block depending on the replacement policy
+//This function selects the block with the oldest timestamp depending on the replacement policy
 unsigned int eject(unsigned int set, CacheBlock* cache) {
 
     unsigned int ejected = 0; //The first way is assumed to have the ejected block
@@ -214,6 +214,7 @@ int main(int argc, char *argv[]) {
     printf("write %" PRIu64 "\n", writes);
     printf("read %" PRIu64 "\n", reads);
     
+    free(cache);
 
     return 0;
 }
